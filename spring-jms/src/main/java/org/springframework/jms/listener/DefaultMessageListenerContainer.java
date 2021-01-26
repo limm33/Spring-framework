@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -306,7 +306,7 @@ public class DefaultMessageListenerContainer extends AbstractPollingMessageListe
 			int separatorIndex = concurrency.indexOf('-');
 			if (separatorIndex != -1) {
 				setConcurrentConsumers(Integer.parseInt(concurrency.substring(0, separatorIndex)));
-				setMaxConcurrentConsumers(Integer.parseInt(concurrency.substring(separatorIndex + 1, concurrency.length())));
+				setMaxConcurrentConsumers(Integer.parseInt(concurrency.substring(separatorIndex + 1)));
 			}
 			else {
 				setConcurrentConsumers(1);
@@ -380,8 +380,7 @@ public class DefaultMessageListenerContainer extends AbstractPollingMessageListe
 	public void setMaxConcurrentConsumers(int maxConcurrentConsumers) {
 		Assert.isTrue(maxConcurrentConsumers > 0, "'maxConcurrentConsumers' value must be at least 1 (one)");
 		synchronized (this.lifecycleMonitor) {
-			this.maxConcurrentConsumers =
-					(maxConcurrentConsumers > this.concurrentConsumers ? maxConcurrentConsumers : this.concurrentConsumers);
+			this.maxConcurrentConsumers = Math.max(maxConcurrentConsumers, this.concurrentConsumers);
 		}
 	}
 
@@ -560,12 +559,13 @@ public class DefaultMessageListenerContainer extends AbstractPollingMessageListe
 		logger.debug("Waiting for shutdown of message listener invokers");
 		try {
 			synchronized (this.lifecycleMonitor) {
-				// Waiting for AsyncMessageListenerInvokers to deactivate themselves...
+				int waitCount = 0;
 				while (this.activeInvokerCount > 0) {
 					if (logger.isDebugEnabled()) {
 						logger.debug("Still waiting for shutdown of " + this.activeInvokerCount +
-								" message listener invokers");
+								" message listener invokers (iteration " + waitCount + ")");
 					}
+					// Wait for AsyncMessageListenerInvokers to deactivate themselves...
 					long timeout = getReceiveTimeout();
 					if (timeout > 0) {
 						this.lifecycleMonitor.wait(timeout);
@@ -573,8 +573,9 @@ public class DefaultMessageListenerContainer extends AbstractPollingMessageListe
 					else {
 						this.lifecycleMonitor.wait();
 					}
+					waitCount++;
 				}
-				// Clear remaining scheduled invokers, possibly left over as paused tasks...
+				// Clear remaining scheduled invokers, possibly left over as paused tasks
 				for (AsyncMessageListenerInvoker scheduledInvoker : this.scheduledInvokers) {
 					scheduledInvoker.clearResources();
 				}

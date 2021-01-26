@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -166,11 +167,11 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
 	private void updateContentTypeHeader() {
 		if (this.contentType != null) {
-			StringBuilder sb = new StringBuilder(this.contentType);
-			if (!this.contentType.toLowerCase().contains(CHARSET_PREFIX) && this.charset) {
-				sb.append(";").append(CHARSET_PREFIX).append(this.characterEncoding);
+			String value = this.contentType;
+			if (this.charset && !this.contentType.toLowerCase().contains(CHARSET_PREFIX)) {
+				value = value + ';' + CHARSET_PREFIX + this.characterEncoding;
 			}
-			doAddHeaderValue(CONTENT_TYPE_HEADER, sb.toString(), true);
+			doAddHeaderValue(CONTENT_TYPE_HEADER, value, true);
 		}
 	}
 
@@ -194,7 +195,8 @@ public class MockHttpServletResponse implements HttpServletResponse {
 		}
 		if (this.writer == null) {
 			Writer targetWriter = (this.characterEncoding != null ?
-					new OutputStreamWriter(this.content, this.characterEncoding) : new OutputStreamWriter(this.content));
+					new OutputStreamWriter(this.content, this.characterEncoding) :
+					new OutputStreamWriter(this.content));
 			this.writer = new ResponsePrintWriter(targetWriter);
 		}
 		return this.writer;
@@ -301,6 +303,7 @@ public class MockHttpServletResponse implements HttpServletResponse {
 	public void reset() {
 		resetBuffer();
 		this.characterEncoding = null;
+		this.charset = false;
 		this.contentLength = 0;
 		this.contentType = null;
 		this.locale = null;
@@ -352,7 +355,7 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
 	/**
 	 * Return the names of all specified headers as a Set of Strings.
-	 * <p>As of Servlet 3.0, this method is also defined HttpServletResponse.
+	 * <p>As of Servlet 3.0, this method is also defined in {@link HttpServletResponse}.
 	 * @return the {@code Set} of header name {@code Strings}, or an empty {@code Set} if none
 	 */
 	@Override
@@ -363,7 +366,7 @@ public class MockHttpServletResponse implements HttpServletResponse {
 	/**
 	 * Return the primary value for the given header as a String, if any.
 	 * Will return the first value in case of multiple values.
-	 * <p>As of Servlet 3.0, this method is also defined in HttpServletResponse.
+	 * <p>As of Servlet 3.0, this method is also defined in {@link HttpServletResponse}.
 	 * As of Spring 3.1, it returns a stringified value for Servlet 3.0 compatibility.
 	 * Consider using {@link #getHeaderValue(String)} for raw Object access.
 	 * @param name the name of the header
@@ -377,7 +380,7 @@ public class MockHttpServletResponse implements HttpServletResponse {
 
 	/**
 	 * Return all values for the given header as a List of Strings.
-	 * <p>As of Servlet 3.0, this method is also defined in HttpServletResponse.
+	 * <p>As of Servlet 3.0, this method is also defined in {@link HttpServletResponse}.
 	 * As of Spring 3.1, it returns a List of stringified values for Servlet 3.0 compatibility.
 	 * Consider using {@link #getHeaderValues(String)} for raw Object access.
 	 * @param name the name of the header
@@ -493,27 +496,33 @@ public class MockHttpServletResponse implements HttpServletResponse {
 		setHeaderValue(name, formatDate(value));
 	}
 
-	public long getDateHeader(String name) {
-		SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT, Locale.US);
-		dateFormat.setTimeZone(GMT);
-		try {
-			return dateFormat.parse(getHeader(name)).getTime();
-		}
-		catch (ParseException ex) {
-			throw new IllegalArgumentException(
-					"Value for header '" + name + "' is not a valid Date: " + getHeader(name));
-		}
-	}
-
 	@Override
 	public void addDateHeader(String name, long value) {
 		addHeaderValue(name, formatDate(value));
 	}
 
+	public long getDateHeader(String name) {
+		String headerValue = getHeader(name);
+		if (headerValue == null) {
+			return -1;
+		}
+		try {
+			return newDateFormat().parse(getHeader(name)).getTime();
+		}
+		catch (ParseException ex) {
+			throw new IllegalArgumentException(
+					"Value for header '" + name + "' is not a valid Date: " + headerValue);
+		}
+	}
+
 	private String formatDate(long date) {
+		return newDateFormat().format(new Date(date));
+	}
+
+	private DateFormat newDateFormat() {
 		SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT, Locale.US);
 		dateFormat.setTimeZone(GMT);
-		return dateFormat.format(new Date(date));
+		return dateFormat;
 	}
 
 	@Override
@@ -680,7 +689,7 @@ public class MockHttpServletResponse implements HttpServletResponse {
 		}
 
 		@Override
-		public void write(char buf[], int off, int len) {
+		public void write(char[] buf, int off, int len) {
 			super.write(buf, off, len);
 			super.flush();
 			setCommittedIfBufferSizeExceeded();

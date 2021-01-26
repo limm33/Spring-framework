@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.web.filter;
 
 import java.io.IOException;
 import java.util.Enumeration;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -32,20 +32,18 @@ import org.springframework.mock.web.test.MockFilterChain;
 import org.springframework.mock.web.test.MockHttpServletRequest;
 import org.springframework.mock.web.test.MockHttpServletResponse;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Unit tests for {@link ForwardedHeaderFilter}.
+ *
  * @author Rossen Stoyanchev
  * @author Eddú Meléndez
  * @author Rob Winch
  */
 public class ForwardedHeaderFilterTests {
 
-	private static final String X_FORWARDED_PROTO = "x-forwarded-proto"; // SPR-14372 (case insensitive)
+	private static final String X_FORWARDED_PROTO = "x-forwarded-proto";  // SPR-14372 (case insensitive)
 	private static final String X_FORWARDED_HOST = "x-forwarded-host";
 	private static final String X_FORWARDED_PORT = "x-forwarded-port";
 	private static final String X_FORWARDED_PREFIX = "x-forwarded-prefix";
@@ -60,7 +58,7 @@ public class ForwardedHeaderFilterTests {
 
 	@Before
 	@SuppressWarnings("serial")
-	public void setUp() throws Exception {
+	public void setup() throws Exception {
 		this.request = new MockHttpServletRequest();
 		this.request.setScheme("http");
 		this.request.setServerName("localhost");
@@ -185,9 +183,7 @@ public class ForwardedHeaderFilterTests {
 	@Test
 	public void caseInsensitiveForwardedPrefix() throws Exception {
 		this.request = new MockHttpServletRequest() {
-
 			// Make it case-sensitive (SPR-14372)
-
 			@Override
 			public String getHeader(String header) {
 				Enumeration<String> names = getHeaderNames();
@@ -305,6 +301,17 @@ public class ForwardedHeaderFilterTests {
 		assertEquals("https://example.com/foo/bar", redirectedUrl);
 	}
 
+	@Test // SPR-16506
+	public void sendRedirectWithAbsolutePathQueryParamAndFragment() throws Exception {
+		this.request.addHeader(X_FORWARDED_PROTO, "https");
+		this.request.addHeader(X_FORWARDED_HOST, "example.com");
+		this.request.addHeader(X_FORWARDED_PORT, "443");
+		this.request.setQueryString("oldqp=1");
+
+		String redirectedUrl = sendRedirect("/foo/bar?newqp=2#fragment");
+		assertEquals("https://example.com/foo/bar?newqp=2#fragment", redirectedUrl);
+	}
+
 	@Test
 	public void sendRedirectWithContextPath() throws Exception {
 		this.request.addHeader(X_FORWARDED_PROTO, "https");
@@ -365,7 +372,7 @@ public class ForwardedHeaderFilterTests {
 		this.request.addHeader(X_FORWARDED_HOST, "example.com");
 		this.request.addHeader(X_FORWARDED_PORT, "443");
 
-		String location = "http://other.info/foo/bar";
+		String location = "https://other.info/foo/bar";
 		String redirectedUrl = sendRedirect(location);
 		assertEquals(location, redirectedUrl);
 	}
@@ -404,6 +411,27 @@ public class ForwardedHeaderFilterTests {
 		assertEquals("../foo/bar", redirectedUrl);
 	}
 
+	@Test
+	public void sendRedirectWhenRequestOnlyAndXForwardedThenUsesRelativeRedirects() throws Exception {
+		this.request.addHeader(X_FORWARDED_PROTO, "https");
+		this.request.addHeader(X_FORWARDED_HOST, "example.com");
+		this.request.addHeader(X_FORWARDED_PORT, "443");
+		this.filter.setRelativeRedirects(true);
+
+		String location = sendRedirect("/a");
+
+		assertEquals("/a", location);
+	}
+
+	@Test
+	public void sendRedirectWhenRequestOnlyAndNoXForwardedThenUsesRelativeRedirects() throws Exception {
+		this.filter.setRelativeRedirects(true);
+
+		String location = sendRedirect("/a");
+
+		assertEquals("/a", location);
+	}
+
 	private String sendRedirect(final String location) throws ServletException, IOException {
 		MockHttpServletResponse response = doWithFiltersAndGetResponse(this.filter, new OncePerRequestFilter() {
 			@Override
@@ -412,10 +440,10 @@ public class ForwardedHeaderFilterTests {
 				response.sendRedirect(location);
 			}
 		});
-
 		return response.getRedirectedUrl();
 	}
 
+	@SuppressWarnings("serial")
 	private MockHttpServletResponse doWithFiltersAndGetResponse(Filter... filters) throws ServletException, IOException {
 		MockHttpServletResponse response = new MockHttpServletResponse();
 		FilterChain filterChain = new MockFilterChain(new HttpServlet() {}, filters);

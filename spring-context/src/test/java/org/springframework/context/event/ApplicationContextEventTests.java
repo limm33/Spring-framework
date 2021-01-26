@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,6 +46,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.support.TaskUtils;
 import org.springframework.tests.sample.beans.TestBean;
+import org.springframework.util.ReflectionUtils;
 
 import static org.junit.Assert.*;
 import static org.mockito.BDDMockito.*;
@@ -444,6 +445,54 @@ public class ApplicationContextEventTests extends AbstractApplicationEventListen
 		assertTrue(seenEvents.contains(event1));
 		assertTrue(seenEvents.contains(event2));
 
+		context.close();
+	}
+
+	@Test
+	public void lambdaAsListenerWithErrorHandler() {
+		final Set<MyEvent> seenEvents = new HashSet<>();
+		StaticApplicationContext context = new StaticApplicationContext();
+		SimpleApplicationEventMulticaster multicaster = new SimpleApplicationEventMulticaster();
+		multicaster.setErrorHandler(ReflectionUtils::rethrowRuntimeException);
+		context.getBeanFactory().registerSingleton(
+				StaticApplicationContext.APPLICATION_EVENT_MULTICASTER_BEAN_NAME, multicaster);
+		ApplicationListener<MyEvent> listener = seenEvents::add;
+		context.addApplicationListener(listener);
+		context.refresh();
+
+		MyEvent event1 = new MyEvent(context);
+		context.publishEvent(event1);
+		context.publishEvent(new MyOtherEvent(context));
+		MyEvent event2 = new MyEvent(context);
+		context.publishEvent(event2);
+		assertSame(2, seenEvents.size());
+		assertTrue(seenEvents.contains(event1));
+		assertTrue(seenEvents.contains(event2));
+
+		context.close();
+	}
+
+	@Test
+	public void lambdaAsListenerWithJava8StyleClassCastMessage() {
+		StaticApplicationContext context = new StaticApplicationContext();
+		ApplicationListener<ApplicationEvent> listener =
+				event -> { throw new ClassCastException(event.getClass().getName()); };
+		context.addApplicationListener(listener);
+		context.refresh();
+
+		context.publishEvent(new MyEvent(context));
+		context.close();
+	}
+
+	@Test
+	public void lambdaAsListenerWithJava9StyleClassCastMessage() {
+		StaticApplicationContext context = new StaticApplicationContext();
+		ApplicationListener<ApplicationEvent> listener =
+				event -> { throw new ClassCastException("spring.context/" + event.getClass().getName()); };
+		context.addApplicationListener(listener);
+		context.refresh();
+
+		context.publishEvent(new MyEvent(context));
 		context.close();
 	}
 

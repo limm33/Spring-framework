@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -135,8 +135,9 @@ public abstract class AbstractMessageConverter implements SmartMessageConverter 
 	 * @param payloadClass either byte[] or String
 	 */
 	public void setSerializedPayloadClass(Class<?> payloadClass) {
-		Assert.isTrue(byte[].class == payloadClass || String.class == payloadClass,
-				"Payload class must be byte[] or String: " + payloadClass);
+		if (!(byte[].class == payloadClass || String.class == payloadClass)) {
+			throw new IllegalArgumentException("Payload class must be byte[] or String: " + payloadClass);
+		}
 		this.serializedPayloadClass = payloadClass;
 	}
 
@@ -147,20 +148,6 @@ public abstract class AbstractMessageConverter implements SmartMessageConverter 
 		return this.serializedPayloadClass;
 	}
 
-
-	/**
-	 * Returns the default content type for the payload. Called when
-	 * {@link #toMessage(Object, MessageHeaders)} is invoked without message headers or
-	 * without a content type header.
-	 * <p>By default, this returns the first element of the {@link #getSupportedMimeTypes()
-	 * supportedMimeTypes}, if any. Can be overridden in sub-classes.
-	 * @param payload the payload being converted to message
-	 * @return the content type, or {@code null} if not known
-	 */
-	protected MimeType getDefaultContentType(Object payload) {
-		List<MimeType> mimeTypes = getSupportedMimeTypes();
-		return (!mimeTypes.isEmpty() ? mimeTypes.get(0) : null);
-	}
 
 	@Override
 	public final Object fromMessage(Message<?> message, Class<?> targetClass) {
@@ -173,10 +160,6 @@ public abstract class AbstractMessageConverter implements SmartMessageConverter 
 			return null;
 		}
 		return convertFromInternal(message, targetClass, conversionHint);
-	}
-
-	protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
-		return (supports(targetClass) && supportsMimeType(message.getHeaders()));
 	}
 
 	@Override
@@ -212,6 +195,11 @@ public abstract class AbstractMessageConverter implements SmartMessageConverter 
 		return builder.build();
 	}
 
+
+	protected boolean canConvertFrom(Message<?> message, Class<?> targetClass) {
+		return (supports(targetClass) && supportsMimeType(message.getHeaders()));
+	}
+
 	protected boolean canConvertTo(Object payload, MessageHeaders headers) {
 		Class<?> clazz = (payload != null ? payload.getClass() : null);
 		return (supports(clazz) && supportsMimeType(headers));
@@ -235,6 +223,21 @@ public abstract class AbstractMessageConverter implements SmartMessageConverter 
 
 	protected MimeType getMimeType(MessageHeaders headers) {
 		return (this.contentTypeResolver != null ? this.contentTypeResolver.resolve(headers) : null);
+	}
+
+	/**
+	 * Return the default content type for the payload. Called when
+	 * {@link #toMessage(Object, MessageHeaders)} is invoked without
+	 * message headers or without a content type header.
+	 * <p>By default, this returns the first element of the
+	 * {@link #getSupportedMimeTypes() supportedMimeTypes}, if any.
+	 * Can be overridden in subclasses.
+	 * @param payload the payload being converted to a message
+	 * @return the content type, or {@code null} if not known
+	 */
+	protected MimeType getDefaultContentType(Object payload) {
+		List<MimeType> mimeTypes = getSupportedMimeTypes();
+		return (!mimeTypes.isEmpty() ? mimeTypes.get(0) : null);
 	}
 
 

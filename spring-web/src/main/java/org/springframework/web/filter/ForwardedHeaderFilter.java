@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,6 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 
 import org.springframework.http.HttpRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.LinkedCaseInsensitiveMap;
@@ -74,26 +75,34 @@ public class ForwardedHeaderFilter extends OncePerRequestFilter {
 	}
 
 
-	private final UrlPathHelper pathHelper;
-
 	private boolean removeOnly;
 
-
-	public ForwardedHeaderFilter() {
-		this.pathHelper = new UrlPathHelper();
-		this.pathHelper.setUrlDecode(false);
-		this.pathHelper.setRemoveSemicolonContent(false);
-	}
+	private boolean relativeRedirects;
 
 
 	/**
 	 * Enables mode in which any "Forwarded" or "X-Forwarded-*" headers are
 	 * removed only and the information in them ignored.
-	 * @param removeOnly whether to discard and ingore forwarded headers
+	 * @param removeOnly whether to discard and ignore forwarded headers
 	 * @since 4.3.9
 	 */
 	public void setRemoveOnly(boolean removeOnly) {
 		this.removeOnly = removeOnly;
+	}
+
+	/**
+	 * Use this property to enable relative redirects as explained in
+	 * {@link RelativeRedirectFilter}, and also using the same response wrapper
+	 * as that filter does, or if both are configured, only one will wrap.
+	 * <p>By default, if this property is set to false, in which case calls to
+	 * {@link HttpServletResponse#sendRedirect(String)} are overridden in order
+	 * to turn relative into absolute URLs, also taking into account forwarded
+	 * headers.
+	 * @param relativeRedirects whether to use relative redirects
+	 * @since 4.3.10
+	 */
+	public void setRelativeRedirects(boolean relativeRedirects) {
+		this.relativeRedirects = relativeRedirects;
 	}
 
 
@@ -128,8 +137,10 @@ public class ForwardedHeaderFilter extends OncePerRequestFilter {
 			filterChain.doFilter(theRequest, response);
 		}
 		else {
-			HttpServletRequest theRequest = new ForwardedHeaderExtractingRequest(request, this.pathHelper);
-			HttpServletResponse theResponse = new ForwardedHeaderExtractingResponse(response, theRequest);
+			HttpServletRequest theRequest = new ForwardedHeaderExtractingRequest(request);
+			HttpServletResponse theResponse = (this.relativeRedirects ?
+					RelativeRedirectResponseWrapper.wrapIfNecessary(response, HttpStatus.SEE_OTHER) :
+					new ForwardedHeaderExtractingResponse(response, theRequest));
 			filterChain.doFilter(theRequest, theResponse);
 		}
 	}
@@ -141,7 +152,6 @@ public class ForwardedHeaderFilter extends OncePerRequestFilter {
 	private static class ForwardedHeaderRemovingRequest extends HttpServletRequestWrapper {
 
 		private final Map<String, List<String>> headers;
-
 
 		public ForwardedHeaderRemovingRequest(HttpServletRequest request) {
 			super(request);
@@ -180,6 +190,7 @@ public class ForwardedHeaderFilter extends OncePerRequestFilter {
 		}
 	}
 
+
 	/**
 	 * Extract and use "Forwarded" or "X-Forwarded-*" headers.
 	 */
@@ -199,8 +210,7 @@ public class ForwardedHeaderFilter extends OncePerRequestFilter {
 
 		private final String requestUrl;
 
-
-		public ForwardedHeaderExtractingRequest(HttpServletRequest request, UrlPathHelper pathHelper) {
+		public ForwardedHeaderExtractingRequest(HttpServletRequest request) {
 			super(request);
 
 			HttpRequest httpRequest = new ServletServerHttpRequest(request);
@@ -214,7 +224,7 @@ public class ForwardedHeaderFilter extends OncePerRequestFilter {
 
 			String prefix = getForwardedPrefix(request);
 			this.contextPath = (prefix != null ? prefix : request.getContextPath());
-			this.requestUri = this.contextPath + pathHelper.getPathWithinApplication(request);
+			this.requestUri = this.contextPath + UrlPathHelper.rawPathInstance.getPathWithinApplication(request);
 			this.requestUrl = this.scheme + "://" + this.host + (port == -1 ? "" : ":" + port) + this.requestUri;
 		}
 
@@ -276,9 +286,7 @@ public class ForwardedHeaderFilter extends OncePerRequestFilter {
 
 		private static final String FOLDER_SEPARATOR = "/";
 
-
 		private final HttpServletRequest request;
-
 
 		public ForwardedHeaderExtractingResponse(HttpServletResponse response, HttpServletRequest request) {
 			super(response);
@@ -287,10 +295,12 @@ public class ForwardedHeaderFilter extends OncePerRequestFilter {
 
 		@Override
 		public void sendRedirect(String location) throws IOException {
+
 			UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(location);
+			UriComponents uriComponents = builder.build();
 
 			// Absolute location
-			if (builder.build().getScheme() != null) {
+			if (uriComponents.getScheme() != null) {
 				super.sendRedirect(location);
 				return;
 			}
@@ -302,13 +312,18 @@ public class ForwardedHeaderFilter extends OncePerRequestFilter {
 				return;
 			}
 
-			// Relative to Servlet container root or to current request
-			String path = (location.startsWith(FOLDER_SEPARATOR) ? location :
-					StringUtils.applyRelativePath(this.request.getRequestURI(), location));
+			String path = uriComponents.getPath();
+			if (path != null) {
+				// Relative to Servlet container root or to current request
+				path = (path.startsWith(FOLDER_SEPARATOR) ? path :
+						StringUtils.applyRelativePath(this.request.getRequestURI(), path));
+			}
 
 			String result = UriComponentsBuilder
 					.fromHttpRequest(new ServletServerHttpRequest(this.request))
 					.replacePath(path)
+					.replaceQuery(uriComponents.getQuery())
+					.fragment(uriComponents.getFragment())
 					.build().normalize().toUriString();
 
 			super.sendRedirect(result);

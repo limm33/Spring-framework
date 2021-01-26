@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -71,7 +71,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
  * {@code @Profile} can therefore not be used to select an overloaded method with a
  * particular argument signature over another; resolution between all factory methods
  * for the same bean follows Spring's constructor resolution algorithm at creation time.
- * <b>Use distinct Java method names pointing to the same {@link @Bean#name bean name}
+ * <b>Use distinct Java method names pointing to the same {@link Bean#name bean name}
  * if you'd like to define alternative beans with different profile conditions</b>;
  * see {@code ProfileDatabaseConfig} in {@link Configuration @Configuration}'s javadoc.
  *

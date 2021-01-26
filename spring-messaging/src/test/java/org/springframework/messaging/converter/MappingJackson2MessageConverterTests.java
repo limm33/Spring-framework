@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,11 +16,12 @@
 
 package org.springframework.messaging.converter;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonView;
@@ -37,7 +38,7 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 
 /**
- * Test fixture for {@link org.springframework.messaging.converter.MappingJackson2MessageConverter}.
+ * Test fixture for {@link MappingJackson2MessageConverter}.
  *
  * @author Rossen Stoyanchev
  * @author Sebastien Deleuze
@@ -72,7 +73,7 @@ public class MappingJackson2MessageConverterTests {
 	}
 
 	@Test
-	public void fromMessage() throws Exception {
+	public void fromMessage() {
 		MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
 		String payload = "{\"bytes\":\"AQI=\",\"array\":[\"Foo\",\"Bar\"],\"number\":42,\"string\":\"Foo\",\"bool\":true,\"fraction\":42.0}";
 		Message<?> message = MessageBuilder.withPayload(payload.getBytes(UTF_8)).build();
@@ -87,7 +88,7 @@ public class MappingJackson2MessageConverterTests {
 	}
 
 	@Test
-	public void fromMessageUntyped() throws Exception {
+	public void fromMessageUntyped() {
 		MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
 		String payload = "{\"bytes\":\"AQI=\",\"array\":[\"Foo\",\"Bar\"],"
 				+ "\"number\":42,\"string\":\"Foo\",\"bool\":true,\"fraction\":42.0}";
@@ -104,7 +105,7 @@ public class MappingJackson2MessageConverterTests {
 	}
 
 	@Test(expected = MessageConversionException.class)
-	public void fromMessageInvalidJson() throws Exception {
+	public void fromMessageInvalidJson() {
 		MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
 		String payload = "FooBar";
 		Message<?> message = MessageBuilder.withPayload(payload.getBytes(UTF_8)).build();
@@ -112,7 +113,7 @@ public class MappingJackson2MessageConverterTests {
 	}
 
 	@Test
-	public void fromMessageValidJsonWithUnknownProperty() throws IOException {
+	public void fromMessageValidJsonWithUnknownProperty() {
 		MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
 		String payload = "{\"string\":\"string\",\"unknownProperty\":\"value\"}";
 		Message<?> message = MessageBuilder.withPayload(payload.getBytes(UTF_8)).build();
@@ -120,8 +121,36 @@ public class MappingJackson2MessageConverterTests {
 		assertEquals("string", myBean.getString());
 	}
 
+	@Test // SPR-16252
+	public void fromMessageToList() throws Exception {
+		MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+		String payload = "[1, 2, 3, 4, 5, 6, 7, 8, 9]";
+		Message<?> message = MessageBuilder.withPayload(payload.getBytes(StandardCharsets.UTF_8)).build();
+
+		Method method = getClass().getDeclaredMethod("handleList", List.class);
+		MethodParameter param = new MethodParameter(method, 0);
+		Object actual = converter.fromMessage(message, List.class, param);
+
+		assertNotNull(actual);
+		assertEquals(Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L), actual);
+	}
+
+	@Test // SPR-16486
+	public void fromMessageToMessageWithPojo() throws Exception {
+		MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+		String payload = "{\"string\":\"foo\"}";
+		Message<?> message = MessageBuilder.withPayload(payload.getBytes(StandardCharsets.UTF_8)).build();
+
+		Method method = getClass().getDeclaredMethod("handleMessage", Message.class);
+		MethodParameter param = new MethodParameter(method, 0);
+		Object actual = converter.fromMessage(message, MyBean.class, param);
+
+		assertTrue(actual instanceof MyBean);
+		assertEquals("foo", ((MyBean) actual).getString());
+	}
+
 	@Test
-	public void toMessage() throws Exception {
+	public void toMessage() {
 		MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
 		MyBean payload = new MyBean();
 		payload.setString("Foo");
@@ -210,6 +239,12 @@ public class MappingJackson2MessageConverterTests {
 	}
 
 	public void jsonViewPayload(@JsonView(MyJacksonView2.class) JacksonViewBean payload) {
+	}
+
+	void handleList(List<Long> payload) {
+	}
+
+	void handleMessage(Message<MyBean> message) {
 	}
 
 

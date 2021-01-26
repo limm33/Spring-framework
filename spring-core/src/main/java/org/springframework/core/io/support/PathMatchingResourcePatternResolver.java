@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.core.io.support;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -170,7 +171,7 @@ import org.springframework.util.StringUtils;
  * @author Colin Sampaleanu
  * @author Marius Bogoevici
  * @author Costin Leau
- * @author Phil Webb
+ * @author Phillip Webb
  * @since 1.0.2
  * @see #CLASSPATH_ALL_URL_PREFIX
  * @see org.springframework.util.AntPathMatcher
@@ -287,7 +288,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 			// Generally only look for a pattern after a prefix here,
 			// and on Tomcat only after the "*/" separator for its "war:" protocol.
 			int prefixEnd = (locationPattern.startsWith("war:") ? locationPattern.indexOf("*/") + 1 :
-					locationPattern.indexOf(":") + 1);
+					locationPattern.indexOf(':') + 1);
 			if (getPathMatcher().isPattern(locationPattern.substring(prefixEnd))) {
 				// a file pattern
 				return findPathMatchingResources(locationPattern);
@@ -368,7 +369,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 				for (URL url : ((URLClassLoader) classLoader).getURLs()) {
 					try {
 						UrlResource jarResource = new UrlResource(
-								ResourceUtils.JAR_URL_PREFIX + url.toString() + ResourceUtils.JAR_URL_SEPARATOR);
+								ResourceUtils.JAR_URL_PREFIX + url + ResourceUtils.JAR_URL_SEPARATOR);
 						if (jarResource.exists()) {
 							result.add(jarResource);
 						}
@@ -420,11 +421,16 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 			for (String path : StringUtils.delimitedListToStringArray(
 					javaClassPathProperty, System.getProperty("path.separator"))) {
 				try {
-					File file = new File(path);
+					String filePath = new File(path).getAbsolutePath();
+					int prefixIndex = filePath.indexOf(':');
+					if (prefixIndex == 1) {
+						// Possibly "c:" drive prefix on Windows, to be upper-cased for proper duplicate detection
+						filePath = StringUtils.capitalize(filePath);
+					}
 					UrlResource jarResource = new UrlResource(ResourceUtils.JAR_URL_PREFIX +
-							ResourceUtils.FILE_URL_PREFIX + file.getAbsolutePath() +
-							ResourceUtils.JAR_URL_SEPARATOR);
-					if (jarResource.exists()) {
+							ResourceUtils.FILE_URL_PREFIX + filePath + ResourceUtils.JAR_URL_SEPARATOR);
+					// Potentially overlapping with URLClassLoader.getURLs() result above!
+					if (!result.contains(jarResource) && !hasDuplicate(filePath, result) && jarResource.exists()) {
 						result.add(jarResource);
 					}
 				}
@@ -440,6 +446,29 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 			if (logger.isDebugEnabled()) {
 				logger.debug("Failed to evaluate 'java.class.path' manifest entries: " + ex);
 			}
+		}
+	}
+
+	/**
+	 * Check whether the given file path has a duplicate but differently structured entry
+	 * in the existing result, i.e. with or without a leading slash.
+	 * @param filePath the file path (with or without a leading slash)
+	 * @param result the current result
+	 * @return {@code true} if there is a duplicate (i.e. to ignore the given file path),
+	 * {@code false} to proceed with adding a corresponding resource to the current result
+	 */
+	private boolean hasDuplicate(String filePath, Set<Resource> result) {
+		if (result.isEmpty()) {
+			return false;
+		}
+		String duplicatePath = (filePath.startsWith("/") ? filePath.substring(1) : "/" + filePath);
+		try {
+			return result.contains(new UrlResource(ResourceUtils.JAR_URL_PREFIX + ResourceUtils.FILE_URL_PREFIX +
+					duplicatePath + ResourceUtils.JAR_URL_SEPARATOR));
+		}
+		catch (MalformedURLException ex) {
+			// Ignore: just for testing against duplicate.
+			return false;
 		}
 	}
 
@@ -461,18 +490,18 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 		Set<Resource> result = new LinkedHashSet<Resource>(16);
 		for (Resource rootDirResource : rootDirResources) {
 			rootDirResource = resolveRootDirResource(rootDirResource);
-			URL rootDirURL = rootDirResource.getURL();
+			URL rootDirUrl = rootDirResource.getURL();
 			if (equinoxResolveMethod != null) {
-				if (rootDirURL.getProtocol().startsWith("bundle")) {
-					rootDirURL = (URL) ReflectionUtils.invokeMethod(equinoxResolveMethod, null, rootDirURL);
-					rootDirResource = new UrlResource(rootDirURL);
+				if (rootDirUrl.getProtocol().startsWith("bundle")) {
+					rootDirUrl = (URL) ReflectionUtils.invokeMethod(equinoxResolveMethod, null, rootDirUrl);
+					rootDirResource = new UrlResource(rootDirUrl);
 				}
 			}
-			if (rootDirURL.getProtocol().startsWith(ResourceUtils.URL_PROTOCOL_VFS)) {
-				result.addAll(VfsResourceMatchingDelegate.findMatchingResources(rootDirURL, subPattern, getPathMatcher()));
+			if (rootDirUrl.getProtocol().startsWith(ResourceUtils.URL_PROTOCOL_VFS)) {
+				result.addAll(VfsResourceMatchingDelegate.findMatchingResources(rootDirUrl, subPattern, getPathMatcher()));
 			}
-			else if (ResourceUtils.isJarURL(rootDirURL) || isJarResource(rootDirResource)) {
-				result.addAll(doFindPathMatchingJarResources(rootDirResource, rootDirURL, subPattern));
+			else if (ResourceUtils.isJarURL(rootDirUrl) || isJarResource(rootDirResource)) {
+				result.addAll(doFindPathMatchingJarResources(rootDirResource, rootDirUrl, subPattern));
 			}
 			else {
 				result.addAll(doFindPathMatchingFileResources(rootDirResource, subPattern));
@@ -497,7 +526,7 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 	 * @see #retrieveMatchingFiles
 	 */
 	protected String determineRootDir(String location) {
-		int prefixEnd = location.indexOf(":") + 1;
+		int prefixEnd = location.indexOf(':') + 1;
 		int rootDirEnd = location.length();
 		while (rootDirEnd > prefixEnd && getPathMatcher().isPattern(location.substring(prefixEnd, rootDirEnd))) {
 			rootDirEnd = location.lastIndexOf('/', rootDirEnd - 2) + 1;
@@ -688,10 +717,16 @@ public class PathMatchingResourcePatternResolver implements ResourcePatternResol
 		try {
 			rootDir = rootDirResource.getFile().getAbsoluteFile();
 		}
-		catch (IOException ex) {
+		catch (FileNotFoundException ex) {
+			if (logger.isInfoEnabled()) {
+				logger.info("Cannot search for matching files underneath " + rootDirResource +
+						" in the file system: " + ex.getMessage());
+			}
+			return Collections.emptySet();
+		}
+		catch (Exception ex) {
 			if (logger.isWarnEnabled()) {
-				logger.warn("Cannot search for matching files underneath " + rootDirResource +
-						" because it does not correspond to a directory in the file system", ex);
+				logger.warn("Failed to resolve " + rootDirResource + " in the file system: " + ex);
 			}
 			return Collections.emptySet();
 		}
