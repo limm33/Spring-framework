@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -65,7 +65,7 @@ public abstract class ConnectionFactoryUtils {
 	 * @see SmartConnectionFactory#shouldStop
 	 * @see org.springframework.jms.support.JmsUtils#closeConnection
 	 */
-	public static void releaseConnection(Connection con, @Nullable ConnectionFactory cf, boolean started) {
+	public static void releaseConnection(@Nullable Connection con, @Nullable ConnectionFactory cf, boolean started) {
 		if (con == null) {
 			return;
 		}
@@ -110,7 +110,7 @@ public abstract class ConnectionFactoryUtils {
 	 * @param cf the JMS ConnectionFactory that the Session originated from
 	 * @return whether the Session is transactional
 	 */
-	public static boolean isSessionTransactional(Session session, ConnectionFactory cf) {
+	public static boolean isSessionTransactional(@Nullable Session session, @Nullable ConnectionFactory cf) {
 		if (session == null || cf == null) {
 			return false;
 		}
@@ -139,10 +139,12 @@ public abstract class ConnectionFactoryUtils {
 
 		return doGetTransactionalSession(cf, new ResourceFactory() {
 			@Override
+			@Nullable
 			public Session getSession(JmsResourceHolder holder) {
 				return holder.getSession(Session.class, existingCon);
 			}
 			@Override
+			@Nullable
 			public Connection getConnection(JmsResourceHolder holder) {
 				return (existingCon != null ? existingCon : holder.getConnection());
 			}
@@ -182,10 +184,12 @@ public abstract class ConnectionFactoryUtils {
 
 		return (QueueSession) doGetTransactionalSession(cf, new ResourceFactory() {
 			@Override
+			@Nullable
 			public Session getSession(JmsResourceHolder holder) {
 				return holder.getSession(QueueSession.class, existingCon);
 			}
 			@Override
+			@Nullable
 			public Connection getConnection(JmsResourceHolder holder) {
 				return (existingCon != null ? existingCon : holder.getConnection(QueueConnection.class));
 			}
@@ -225,10 +229,12 @@ public abstract class ConnectionFactoryUtils {
 
 		return (TopicSession) doGetTransactionalSession(cf, new ResourceFactory() {
 			@Override
+			@Nullable
 			public Session getSession(JmsResourceHolder holder) {
 				return holder.getSession(TopicSession.class, existingCon);
 			}
 			@Override
+			@Nullable
 			public Connection getConnection(JmsResourceHolder holder) {
 				return (existingCon != null ? existingCon : holder.getConnection(TopicConnection.class));
 			}

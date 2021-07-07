@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,6 +31,7 @@ import org.springframework.lang.Nullable;
 @SuppressWarnings("serial")
 public class ServerWebInputException extends ResponseStatusException {
 
+	@Nullable
 	private final MethodParameter parameter;
 
 
@@ -38,20 +39,20 @@ public class ServerWebInputException extends ResponseStatusException {
 	 * Constructor with an explanation only.
 	 */
 	public ServerWebInputException(String reason) {
-		this(reason, null);
+		this(reason, null, null);
 	}
 
 	/**
 	 * Constructor for a 400 error linked to a specific {@code MethodParameter}.
 	 */
-	public ServerWebInputException(String reason, MethodParameter parameter) {
+	public ServerWebInputException(String reason, @Nullable MethodParameter parameter) {
 		this(reason, parameter, null);
 	}
 
 	/**
 	 * Constructor for a 400 error with a root cause.
 	 */
-	public ServerWebInputException(String reason, MethodParameter parameter, Throwable cause) {
+	public ServerWebInputException(String reason, @Nullable MethodParameter parameter, @Nullable Throwable cause) {
 		super(HttpStatus.BAD_REQUEST, reason, cause);
 		this.parameter = parameter;
 	}

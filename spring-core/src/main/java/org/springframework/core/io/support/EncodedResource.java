@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,8 +46,10 @@ public class EncodedResource implements InputStreamSource {
 
 	private final Resource resource;
 
+	@Nullable
 	private final String encoding;
 
+	@Nullable
 	private final Charset charset;
 
 
@@ -66,7 +68,7 @@ public class EncodedResource implements InputStreamSource {
 	 * @param resource the {@code Resource} to hold (never {@code null})
 	 * @param encoding the encoding to use for reading from the resource
 	 */
-	public EncodedResource(Resource resource, String encoding) {
+	public EncodedResource(Resource resource, @Nullable String encoding) {
 		this(resource, encoding, null);
 	}
 
@@ -76,11 +78,11 @@ public class EncodedResource implements InputStreamSource {
 	 * @param resource the {@code Resource} to hold (never {@code null})
 	 * @param charset the {@code Charset} to use for reading from the resource
 	 */
-	public EncodedResource(Resource resource, Charset charset) {
+	public EncodedResource(Resource resource, @Nullable Charset charset) {
 		this(resource, null, charset);
 	}
 
-	private EncodedResource(Resource resource, String encoding, Charset charset) {
+	private EncodedResource(Resource resource, @Nullable String encoding, @Nullable Charset charset) {
 		super();
 		Assert.notNull(resource, "Resource must not be null");
 		this.resource = resource;
@@ -159,7 +161,7 @@ public class EncodedResource implements InputStreamSource {
 
 
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		if (this == other) {
 			return true;
 		}

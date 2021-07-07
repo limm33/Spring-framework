@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,10 +26,11 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.util.StringUtils;
 
 /**
- * A base {@link HeaderMapper} implementation
+ * A base {@link HeaderMapper} implementation.
  *
  * @author Stephane Nicoll
  * @since 4.1
+ * @param <T> type of the instance to and from which headers will be mapped
  */
 public abstract class AbstractHeaderMapper<T> implements HeaderMapper<T> {
 
@@ -45,7 +46,7 @@ public abstract class AbstractHeaderMapper<T> implements HeaderMapper<T> {
 	 * user-defined property that is being mapped into the MessageHeaders.
 	 * The default is an empty String (no prefix).
 	 */
-	public void setInboundPrefix(String inboundPrefix) {
+	public void setInboundPrefix(@Nullable String inboundPrefix) {
 		this.inboundPrefix = (inboundPrefix != null ? inboundPrefix : "");
 	}
 
@@ -54,7 +55,7 @@ public abstract class AbstractHeaderMapper<T> implements HeaderMapper<T> {
 	 * user-defined message header that is being mapped into the protocol-specific
 	 * Message. The default is an empty String (no prefix).
 	 */
-	public void setOutboundPrefix(String outboundPrefix) {
+	public void setOutboundPrefix(@Nullable String outboundPrefix) {
 		this.outboundPrefix = (outboundPrefix != null ? outboundPrefix : "");
 	}
 
@@ -96,8 +97,8 @@ public abstract class AbstractHeaderMapper<T> implements HeaderMapper<T> {
 			return null;
 		}
 		if (!type.isAssignableFrom(value.getClass())) {
-			if (logger.isWarnEnabled()) {
-				logger.warn("Skipping header '" + name + "'expected type [" + type + "], but got [" +
+			if (logger.isDebugEnabled()) {
+				logger.debug("Skipping header '" + name + "': expected type [" + type + "], but got [" +
 						value.getClass() + "]");
 			}
 			return null;

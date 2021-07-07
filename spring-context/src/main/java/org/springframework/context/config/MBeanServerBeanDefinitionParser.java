@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2008 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -49,11 +49,15 @@ class MBeanServerBeanDefinitionParser extends AbstractBeanDefinitionParser {
 	private static final String AGENT_ID_ATTRIBUTE = "agent-id";
 
 
-	private static final boolean weblogicPresent = ClassUtils.isPresent(
-			"weblogic.management.Helper", MBeanServerBeanDefinitionParser.class.getClassLoader());
+	private static final boolean weblogicPresent;
 
-	private static final boolean webspherePresent = ClassUtils.isPresent(
-			"com.ibm.websphere.management.AdminServiceFactory", MBeanServerBeanDefinitionParser.class.getClassLoader());
+	private static final boolean webspherePresent;
+
+	static {
+		ClassLoader classLoader = MBeanServerBeanDefinitionParser.class.getClassLoader();
+		weblogicPresent = ClassUtils.isPresent("weblogic.management.Helper", classLoader);
+		webspherePresent = ClassUtils.isPresent("com.ibm.websphere.management.AdminServiceFactory", classLoader);
+	}
 
 
 	@Override
@@ -63,7 +67,7 @@ class MBeanServerBeanDefinitionParser extends AbstractBeanDefinitionParser {
 	}
 
 	@Override
-	protected AbstractBeanDefinition parseInternal(@Nullable Element element, @Nullable ParserContext parserContext) {
+	protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
 		String agentId = element.getAttribute(AGENT_ID_ATTRIBUTE);
 		if (StringUtils.hasText(agentId)) {
 			RootBeanDefinition bd = new RootBeanDefinition(MBeanServerFactoryBean.class);

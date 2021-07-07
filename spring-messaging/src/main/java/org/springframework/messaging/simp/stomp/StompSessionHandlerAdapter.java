@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,13 +31,6 @@ import org.springframework.lang.Nullable;
 public abstract class StompSessionHandlerAdapter implements StompSessionHandler {
 
 	/**
-	 * This implementation is empty.
-	 */
-	@Override
-	public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
-	}
-
-	/**
 	 * This implementation returns String as the expected payload type
 	 * for STOMP ERROR frames.
 	 */
@@ -57,8 +50,15 @@ public abstract class StompSessionHandlerAdapter implements StompSessionHandler 
 	 * This implementation is empty.
 	 */
 	@Override
-	public void handleException(StompSession session, StompCommand command, StompHeaders headers,
-			byte[] payload, Throwable exception) {
+	public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
+	}
+
+	/**
+	 * This implementation is empty.
+	 */
+	@Override
+	public void handleException(StompSession session, @Nullable StompCommand command,
+			StompHeaders headers, byte[] payload, Throwable exception) {
 	}
 
 	/**

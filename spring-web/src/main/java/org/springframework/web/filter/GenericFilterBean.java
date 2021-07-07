@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -82,15 +82,19 @@ import org.springframework.web.util.NestedServletException;
 public abstract class GenericFilterBean implements Filter, BeanNameAware, EnvironmentAware,
 		EnvironmentCapable, ServletContextAware, InitializingBean, DisposableBean {
 
-	/** Logger available to subclasses */
+	/** Logger available to subclasses. */
 	protected final Log logger = LogFactory.getLog(getClass());
 
+	@Nullable
 	private String beanName;
 
+	@Nullable
 	private Environment environment;
 
+	@Nullable
 	private ServletContext servletContext;
 
+	@Nullable
 	private FilterConfig filterConfig;
 
 	private final Set<String> requiredProperties = new HashSet<>(4);
@@ -206,9 +210,6 @@ public abstract class GenericFilterBean implements Filter, BeanNameAware, Enviro
 	@Override
 	public final void init(FilterConfig filterConfig) throws ServletException {
 		Assert.notNull(filterConfig, "FilterConfig must not be null");
-		if (logger.isDebugEnabled()) {
-			logger.debug("Initializing filter '" + filterConfig.getFilterName() + "'");
-		}
 
 		this.filterConfig = filterConfig;
 
@@ -238,7 +239,7 @@ public abstract class GenericFilterBean implements Filter, BeanNameAware, Enviro
 		initFilterBean();
 
 		if (logger.isDebugEnabled()) {
-			logger.debug("Filter '" + filterConfig.getFilterName() + "' configured successfully");
+			logger.debug("Filter '" + filterConfig.getFilterName() + "' configured for use");
 		}
 	}
 
@@ -277,7 +278,7 @@ public abstract class GenericFilterBean implements Filter, BeanNameAware, Enviro
 	 * @see javax.servlet.GenericServlet#getServletConfig()
 	 */
 	@Nullable
-	public final FilterConfig getFilterConfig() {
+	public FilterConfig getFilterConfig() {
 		return this.filterConfig;
 	}
 
@@ -293,7 +294,7 @@ public abstract class GenericFilterBean implements Filter, BeanNameAware, Enviro
 	 * @see #setBeanName
 	 */
 	@Nullable
-	protected final String getFilterName() {
+	protected String getFilterName() {
 		return (this.filterConfig != null ? this.filterConfig.getFilterName() : this.beanName);
 	}
 
@@ -303,14 +304,22 @@ public abstract class GenericFilterBean implements Filter, BeanNameAware, Enviro
 	 * <p>Takes the FilterConfig's ServletContext by default.
 	 * If initialized as bean in a Spring application context,
 	 * it falls back to the ServletContext that the bean factory runs in.
-	 * @return the ServletContext instance, or {@code null} if none available
+	 * @return the ServletContext instance
+	 * @throws IllegalStateException if no ServletContext is available
 	 * @see javax.servlet.GenericServlet#getServletContext()
 	 * @see javax.servlet.FilterConfig#getServletContext()
 	 * @see #setServletContext
 	 */
-	@Nullable
-	protected final ServletContext getServletContext() {
-		return (this.filterConfig != null ? this.filterConfig.getServletContext() : this.servletContext);
+	protected ServletContext getServletContext() {
+		if (this.filterConfig != null) {
+			return this.filterConfig.getServletContext();
+		}
+		else if (this.servletContext != null) {
+			return this.servletContext;
+		}
+		else {
+			throw new IllegalStateException("No ServletContext");
+		}
 	}
 
 
@@ -322,7 +331,7 @@ public abstract class GenericFilterBean implements Filter, BeanNameAware, Enviro
 
 		/**
 		 * Create new FilterConfigPropertyValues.
-		 * @param config FilterConfig we'll use to take PropertyValues from
+		 * @param config the FilterConfig we'll use to take PropertyValues from
 		 * @param requiredProperties set of property names we need, where
 		 * we can't accept default values
 		 * @throws ServletException if any required properties are missing

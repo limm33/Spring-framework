@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -47,7 +47,7 @@ public abstract class JmsException extends NestedRuntimeException {
 	 * expected to be a proper subclass of {@link javax.jms.JMSException},
 	 * but can also be a JNDI NamingException or the like.
 	 */
-	public JmsException(String msg, Throwable cause) {
+	public JmsException(String msg, @Nullable Throwable cause) {
 		super(msg, cause);
 	}
 
@@ -57,7 +57,7 @@ public abstract class JmsException extends NestedRuntimeException {
 	 * @param cause the cause of the exception. This argument is generally
 	 * expected to be a proper subclass of {@link javax.jms.JMSException}.
 	 */
-	public JmsException(Throwable cause) {
+	public JmsException(@Nullable Throwable cause) {
 		super(cause != null ? cause.getMessage() : null, cause);
 	}
 
@@ -83,6 +83,7 @@ public abstract class JmsException extends NestedRuntimeException {
 	 * @see javax.jms.JMSException#getLinkedException()
 	 */
 	@Override
+	@Nullable
 	public String getMessage() {
 		String message = super.getMessage();
 		Throwable cause = getCause();

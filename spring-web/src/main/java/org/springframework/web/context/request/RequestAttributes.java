@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,7 +40,7 @@ public interface RequestAttributes {
 	/**
 	 * Constant that indicates session scope.
 	 * <p>This preferably refers to a locally isolated session, if such
-	 * a distinction is available (for example, in a Portlet environment).
+	 * a distinction is available.
 	 * Else, it simply refers to the common session.
 	 */
 	int SCOPE_SESSION = 1;
@@ -120,8 +120,8 @@ public interface RequestAttributes {
 
 	/**
 	 * Resolve the contextual reference for the given key, if any.
-	 * <p>At a minimum: the HttpServletRequest/PortletRequest reference for key
-	 * "request", and the HttpSession/PortletSession reference for key "session".
+	 * <p>At a minimum: the HttpServletRequest reference for key "request", and
+	 * the HttpSession reference for key "session".
 	 * @param key the contextual key
 	 * @return the corresponding object, or {@code null} if none found
 	 */
@@ -132,7 +132,6 @@ public interface RequestAttributes {
 	 * Return an id for the current underlying session.
 	 * @return the session id as String (never {@code null})
 	 */
-	@Nullable
 	String getSessionId();
 
 	/**
@@ -140,7 +139,6 @@ public interface RequestAttributes {
 	 * that is, an object to synchronize on for the underlying session.
 	 * @return the session mutex to use (never {@code null})
 	 */
-	@Nullable
 	Object getSessionMutex();
 
 }

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2015 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -66,12 +66,12 @@ import org.springframework.web.context.ContextLoader;
  *
  * @author Phillip Webb
  * @since 4.0
+ * @param <T> the type being converted to (for Encoder) or from (for Decoder)
+ * @param <M> the WebSocket message type ({@link String} or {@link ByteBuffer})
  * @see ConvertingEncoderDecoderSupport.BinaryEncoder
  * @see ConvertingEncoderDecoderSupport.BinaryDecoder
  * @see ConvertingEncoderDecoderSupport.TextEncoder
  * @see ConvertingEncoderDecoderSupport.TextDecoder
- * @param <T> the type being converted to (for Encoder) or from (for Decoder)
- * @param <M> the WebSocket message type ({@link String} or {@link ByteBuffer})
  */
 public abstract class ConvertingEncoderDecoderSupport<T, M> {
 
@@ -79,12 +79,13 @@ public abstract class ConvertingEncoderDecoderSupport<T, M> {
 
 
 	/**
+	 * Called to initialize the encoder/decoder.
 	 * @see javax.websocket.Encoder#init(EndpointConfig)
 	 * @see javax.websocket.Decoder#init(EndpointConfig)
 	 */
 	public void init(EndpointConfig config) {
 		ApplicationContext applicationContext = getApplicationContext();
-		if (applicationContext != null && applicationContext instanceof ConfigurableApplicationContext) {
+		if (applicationContext instanceof ConfigurableApplicationContext) {
 			ConfigurableListableBeanFactory beanFactory =
 					((ConfigurableApplicationContext) applicationContext).getBeanFactory();
 			beanFactory.autowireBean(this);
@@ -92,6 +93,7 @@ public abstract class ConvertingEncoderDecoderSupport<T, M> {
 	}
 
 	/**
+	 * Called to destroy the encoder/decoder.
 	 * @see javax.websocket.Encoder#destroy()
 	 * @see javax.websocket.Decoder#destroy()
 	 */
@@ -155,10 +157,12 @@ public abstract class ConvertingEncoderDecoderSupport<T, M> {
 	}
 
 	/**
+	 * Encode an object to a message.
 	 * @see javax.websocket.Encoder.Text#encode(Object)
 	 * @see javax.websocket.Encoder.Binary#encode(Object)
 	 */
 	@SuppressWarnings("unchecked")
+	@Nullable
 	public M encode(T object) throws EncodeException {
 		try {
 			return (M) getConversionService().convert(object, getType(), getMessageType());
@@ -169,6 +173,8 @@ public abstract class ConvertingEncoderDecoderSupport<T, M> {
 	}
 
 	/**
+	 * Determine if a given message can be decoded.
+	 * @see #decode(Object)
 	 * @see javax.websocket.Decoder.Text#willDecode(String)
 	 * @see javax.websocket.Decoder.Binary#willDecode(ByteBuffer)
 	 */
@@ -177,10 +183,12 @@ public abstract class ConvertingEncoderDecoderSupport<T, M> {
 	}
 
 	/**
+	 * Decode the a message into an object.
 	 * @see javax.websocket.Decoder.Text#decode(String)
 	 * @see javax.websocket.Decoder.Binary#decode(ByteBuffer)
 	 */
 	@SuppressWarnings("unchecked")
+	@Nullable
 	public T decode(M message) throws DecodeException {
 		try {
 			return (T) getConversionService().convert(message, getMessageType(), getType());
@@ -204,7 +212,7 @@ public abstract class ConvertingEncoderDecoderSupport<T, M> {
 	 * to Spring's conversion service. See {@link ConvertingEncoderDecoderSupport} for details.
 	 * @param <T> the type that this Encoder can convert to
 	 */
-	public static abstract class BinaryEncoder<T> extends ConvertingEncoderDecoderSupport<T, ByteBuffer>
+	public abstract static class BinaryEncoder<T> extends ConvertingEncoderDecoderSupport<T, ByteBuffer>
 			implements Encoder.Binary<T> {
 	}
 
@@ -214,7 +222,7 @@ public abstract class ConvertingEncoderDecoderSupport<T, M> {
 	 * to Spring's conversion service. See {@link ConvertingEncoderDecoderSupport} for details.
 	 * @param <T> the type that this Decoder can convert from
 	 */
-	public static abstract class BinaryDecoder<T> extends ConvertingEncoderDecoderSupport<T, ByteBuffer>
+	public abstract static class BinaryDecoder<T> extends ConvertingEncoderDecoderSupport<T, ByteBuffer>
 			implements Decoder.Binary<T> {
 	}
 
@@ -225,7 +233,7 @@ public abstract class ConvertingEncoderDecoderSupport<T, M> {
 	 * details.
 	 * @param <T> the type that this Encoder can convert to
 	 */
-	public static abstract class TextEncoder<T> extends ConvertingEncoderDecoderSupport<T, String>
+	public abstract static class TextEncoder<T> extends ConvertingEncoderDecoderSupport<T, String>
 			implements Encoder.Text<T> {
 	}
 
@@ -235,7 +243,7 @@ public abstract class ConvertingEncoderDecoderSupport<T, M> {
 	 * to Spring's conversion service. See {@link ConvertingEncoderDecoderSupport} for details.
 	 * @param <T> the type that this Decoder can convert from
 	 */
-	public static abstract class TextDecoder<T> extends ConvertingEncoderDecoderSupport<T, String>
+	public abstract static class TextDecoder<T> extends ConvertingEncoderDecoderSupport<T, String>
 			implements Decoder.Text<T> {
 	}
 

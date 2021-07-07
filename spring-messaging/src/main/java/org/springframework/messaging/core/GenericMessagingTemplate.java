@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,6 +25,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageDeliveryException;
@@ -46,8 +47,14 @@ import org.springframework.util.Assert;
 public class GenericMessagingTemplate extends AbstractDestinationResolvingMessagingTemplate<MessageChannel>
 		implements BeanFactoryAware {
 
+	/**
+	 * The default header key used for a send timeout.
+	 */
 	public static final String DEFAULT_SEND_TIMEOUT_HEADER = "sendTimeout";
 
+	/**
+	 * The default header key used for a receive timeout.
+	 */
 	public static final String DEFAULT_RECEIVE_TIMEOUT_HEADER = "receiveTimeout";
 
 	private volatile long sendTimeout = -1;
@@ -58,7 +65,7 @@ public class GenericMessagingTemplate extends AbstractDestinationResolvingMessag
 
 	private String receiveTimeoutHeader = DEFAULT_RECEIVE_TIMEOUT_HEADER;
 
-	private volatile boolean throwExceptionOnLateReply = false;
+	private volatile boolean throwExceptionOnLateReply;
 
 
 	/**
@@ -96,12 +103,10 @@ public class GenericMessagingTemplate extends AbstractDestinationResolvingMessag
 		return this.receiveTimeout;
 	}
 
-
 	/**
 	 * Set the name of the header used to determine the send timeout (if present).
 	 * Default {@value #DEFAULT_SEND_TIMEOUT_HEADER}.
-	 * The header is removed before sending the message to avoid propagation.
-	 * @param sendTimeoutHeader the sendTimeoutHeader to set
+	 * <p>The header is removed before sending the message to avoid propagation.
 	 * @since 5.0
 	 */
 	public void setSendTimeoutHeader(String sendTimeoutHeader) {
@@ -110,18 +115,17 @@ public class GenericMessagingTemplate extends AbstractDestinationResolvingMessag
 	}
 
 	/**
-	 * @return the configured sendTimeoutHeader.
+	 * Return the configured send-timeout header.
 	 * @since 5.0
 	 */
 	public String getSendTimeoutHeader() {
-		return sendTimeoutHeader;
+		return this.sendTimeoutHeader;
 	}
 
 	/**
 	 * Set the name of the header used to determine the send timeout (if present).
 	 * Default {@value #DEFAULT_RECEIVE_TIMEOUT_HEADER}.
 	 * The header is removed before sending the message to avoid propagation.
-	 * @param receiveTimeoutHeader the receiveTimeoutHeader to set
 	 * @since 5.0
 	 */
 	public void setReceiveTimeoutHeader(String receiveTimeoutHeader) {
@@ -130,11 +134,11 @@ public class GenericMessagingTemplate extends AbstractDestinationResolvingMessag
 	}
 
 	/**
-	 * @return the configured receiveTimeoutHeader
+	 * Return the configured receive-timeout header.
 	 * @since 5.0
 	 */
 	public String getReceiveTimeoutHeader() {
-		return receiveTimeoutHeader;
+		return this.receiveTimeoutHeader;
 	}
 
 	/**
@@ -155,6 +159,7 @@ public class GenericMessagingTemplate extends AbstractDestinationResolvingMessag
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		setDestinationResolver(new BeanFactoryMessageChannelDestinationResolver(beanFactory));
 	}
+
 
 	@Override
 	protected final void doSend(MessageChannel channel, Message<?> message) {
@@ -188,10 +193,12 @@ public class GenericMessagingTemplate extends AbstractDestinationResolvingMessag
 	}
 
 	@Override
+	@Nullable
 	protected final Message<?> doReceive(MessageChannel channel) {
 		return doReceive(channel, this.receiveTimeout);
 	}
 
+	@Nullable
 	protected final Message<?> doReceive(MessageChannel channel, long timeout) {
 		Assert.notNull(channel, "MessageChannel is required");
 		Assert.state(channel instanceof PollableChannel, "A PollableChannel is required to receive messages");
@@ -199,14 +206,15 @@ public class GenericMessagingTemplate extends AbstractDestinationResolvingMessag
 		Message<?> message = (timeout >= 0 ?
 				((PollableChannel) channel).receive(timeout) : ((PollableChannel) channel).receive());
 
-		if (message == null && this.logger.isTraceEnabled()) {
-			this.logger.trace("Failed to receive message from channel '" + channel + "' within timeout: " + timeout);
+		if (message == null && logger.isTraceEnabled()) {
+			logger.trace("Failed to receive message from channel '" + channel + "' within timeout: " + timeout);
 		}
 
 		return message;
 	}
 
 	@Override
+	@Nullable
 	protected final Message<?> doSendAndReceive(MessageChannel channel, Message<?> requestMessage) {
 		Assert.notNull(channel, "'channel' is required");
 		Object originalReplyChannelHeader = requestMessage.getHeaders().getReplyChannel();
@@ -242,25 +250,27 @@ public class GenericMessagingTemplate extends AbstractDestinationResolvingMessag
 
 	private long sendTimeout(Message<?> requestMessage) {
 		Long sendTimeout = headerToLong(requestMessage.getHeaders().get(this.sendTimeoutHeader));
-		return sendTimeout == null ? this.sendTimeout : sendTimeout;
+		return (sendTimeout != null ? sendTimeout : this.sendTimeout);
 	}
 
 	private long receiveTimeout(Message<?> requestMessage) {
 		Long receiveTimeout = headerToLong(requestMessage.getHeaders().get(this.receiveTimeoutHeader));
-		return receiveTimeout == null ? this.receiveTimeout : receiveTimeout;
+		return (receiveTimeout != null ? receiveTimeout : this.receiveTimeout);
 	}
 
-	private Long headerToLong(Object headerValue) {
+	@Nullable
+	private Long headerToLong(@Nullable Object headerValue) {
 		if (headerValue instanceof Number) {
 			return ((Number) headerValue).longValue();
 		}
-		else if(headerValue instanceof String) {
+		else if (headerValue instanceof String) {
 			return Long.parseLong((String) headerValue);
 		}
 		else {
 			return null;
 		}
 	}
+
 
 	/**
 	 * A temporary channel for receiving a single reply message.
@@ -273,6 +283,7 @@ public class GenericMessagingTemplate extends AbstractDestinationResolvingMessag
 
 		private final boolean throwExceptionOnLateReply;
 
+		@Nullable
 		private volatile Message<?> replyMessage;
 
 		private volatile boolean hasReceived;
@@ -290,11 +301,13 @@ public class GenericMessagingTemplate extends AbstractDestinationResolvingMessag
 		}
 
 		@Override
+		@Nullable
 		public Message<?> receive() {
 			return this.receive(-1);
 		}
 
 		@Override
+		@Nullable
 		public Message<?> receive(long timeout) {
 			try {
 				if (timeout < 0) {
@@ -341,7 +354,7 @@ public class GenericMessagingTemplate extends AbstractDestinationResolvingMessag
 
 			if (errorDescription != null) {
 				if (logger.isWarnEnabled()) {
-					logger.warn(errorDescription + ":" + message);
+					logger.warn(errorDescription + ": " + message);
 				}
 				if (this.throwExceptionOnLateReply) {
 					throw new MessageDeliveryException(message, errorDescription);

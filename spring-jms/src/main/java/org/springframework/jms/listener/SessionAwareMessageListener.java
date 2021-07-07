@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,8 +19,6 @@ package org.springframework.jms.listener;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Session;
-
-import org.springframework.lang.Nullable;
 
 /**
  * Variant of the standard JMS {@link javax.jms.MessageListener} interface,
@@ -37,6 +35,7 @@ import org.springframework.lang.Nullable;
  *
  * @author Juergen Hoeller
  * @since 2.0
+ * @param <M> the message type
  * @see AbstractMessageListenerContainer#setMessageListener
  * @see DefaultMessageListenerContainer
  * @see SimpleMessageListenerContainer
@@ -54,6 +53,6 @@ public interface SessionAwareMessageListener<M extends Message> {
 	 * @param session the underlying JMS Session (never {@code null})
 	 * @throws JMSException if thrown by JMS methods
 	 */
-	void onMessage(M message, @Nullable Session session) throws JMSException;
+	void onMessage(M message, Session session) throws JMSException;
 
 }

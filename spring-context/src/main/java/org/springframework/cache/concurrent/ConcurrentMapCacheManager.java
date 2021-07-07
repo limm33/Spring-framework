@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -56,6 +56,7 @@ public class ConcurrentMapCacheManager implements CacheManager, BeanClassLoaderA
 
 	private boolean storeByValue = false;
 
+	@Nullable
 	private SerializationDelegate serialization;
 
 
@@ -146,7 +147,7 @@ public class ConcurrentMapCacheManager implements CacheManager, BeanClassLoaderA
 	}
 
 	@Override
-	public void setBeanClassLoader(@Nullable ClassLoader classLoader) {
+	public void setBeanClassLoader(ClassLoader classLoader) {
 		this.serialization = new SerializationDelegate(classLoader);
 		// Need to recreate all Cache instances with new ClassLoader in store-by-value mode...
 		if (isStoreByValue()) {
@@ -161,6 +162,7 @@ public class ConcurrentMapCacheManager implements CacheManager, BeanClassLoaderA
 	}
 
 	@Override
+	@Nullable
 	public Cache getCache(String name) {
 		Cache cache = this.cacheMap.get(name);
 		if (cache == null && this.dynamic) {
@@ -188,9 +190,7 @@ public class ConcurrentMapCacheManager implements CacheManager, BeanClassLoaderA
 	 */
 	protected Cache createConcurrentMapCache(String name) {
 		SerializationDelegate actualSerialization = (isStoreByValue() ? this.serialization : null);
-		return new ConcurrentMapCache(name, new ConcurrentHashMap<>(256),
-				isAllowNullValues(), actualSerialization);
-
+		return new ConcurrentMapCache(name, new ConcurrentHashMap<>(256), isAllowNullValues(), actualSerialization);
 	}
 
 }

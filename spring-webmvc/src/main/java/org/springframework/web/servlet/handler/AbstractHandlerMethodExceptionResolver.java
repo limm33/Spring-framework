@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,11 +41,14 @@ public abstract class AbstractHandlerMethodExceptionResolver extends AbstractHan
 	@Override
 	protected boolean shouldApplyTo(HttpServletRequest request, @Nullable Object handler) {
 		if (handler == null) {
-			return super.shouldApplyTo(request, handler);
+			return super.shouldApplyTo(request, null);
 		}
 		else if (handler instanceof HandlerMethod) {
 			HandlerMethod handlerMethod = (HandlerMethod) handler;
 			handler = handlerMethod.getBean();
+			return super.shouldApplyTo(request, handler);
+		}
+		else if (hasGlobalExceptionHandlers() && hasHandlerMappings()) {
 			return super.shouldApplyTo(request, handler);
 		}
 		else {
@@ -53,11 +56,23 @@ public abstract class AbstractHandlerMethodExceptionResolver extends AbstractHan
 		}
 	}
 
+	/**
+	 * Whether this resolver has global exception handlers, e.g. not declared in
+	 * the same class as the {@code HandlerMethod} that raised the exception and
+	 * therefore can apply to any handler.
+	 * @since 5.3
+	 */
+	protected boolean hasGlobalExceptionHandlers() {
+		return false;
+	}
+
 	@Override
+	@Nullable
 	protected final ModelAndView doResolveException(
 			HttpServletRequest request, HttpServletResponse response, @Nullable Object handler, Exception ex) {
 
-		return doResolveHandlerMethodException(request, response, (HandlerMethod) handler, ex);
+		HandlerMethod handlerMethod = (handler instanceof HandlerMethod ? (HandlerMethod) handler : null);
+		return doResolveHandlerMethodException(request, response, handlerMethod, ex);
 	}
 
 	/**

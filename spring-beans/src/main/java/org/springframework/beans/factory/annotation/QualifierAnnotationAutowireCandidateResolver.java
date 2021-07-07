@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,7 +40,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * {@link AutowireCandidateResolver} implementation that matches bean definition qualifiers
@@ -145,7 +144,7 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 	@Override
 	public boolean isAutowireCandidate(BeanDefinitionHolder bdHolder, DependencyDescriptor descriptor) {
 		boolean match = super.isAutowireCandidate(bdHolder, descriptor);
-		if (match && descriptor != null) {
+		if (match) {
 			match = checkQualifiers(bdHolder, descriptor.getAnnotations());
 			if (match) {
 				MethodParameter methodParam = descriptor.getMethodParameter();
@@ -188,7 +187,7 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 						foundMeta = true;
 						// Only accept fallback match if @Qualifier annotation has a value...
 						// Otherwise it is just a marker for a custom qualifier annotation.
-						if ((fallbackToMeta && StringUtils.isEmpty(AnnotationUtils.getValue(metaAnn))) ||
+						if ((fallbackToMeta && ObjectUtils.isEmpty(AnnotationUtils.getValue(metaAnn))) ||
 								!checkQualifier(bdHolder, metaAnn, typeConverter)) {
 							return false;
 						}
@@ -298,11 +297,13 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 		return true;
 	}
 
+	@Nullable
 	protected Annotation getQualifiedElementAnnotation(RootBeanDefinition bd, Class<? extends Annotation> type) {
 		AnnotatedElement qualifiedElement = bd.getQualifiedElement();
 		return (qualifiedElement != null ? AnnotationUtils.getAnnotation(qualifiedElement, type) : null);
 	}
 
+	@Nullable
 	protected Annotation getFactoryMethodAnnotation(RootBeanDefinition bd, Class<? extends Annotation> type) {
 		Method resolvedFactoryMethod = bd.getResolvedFactoryMethod();
 		return (resolvedFactoryMethod != null ? AnnotationUtils.getAnnotation(resolvedFactoryMethod, type) : null);
@@ -324,10 +325,26 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 	}
 
 	/**
+	 * Determine whether the given dependency declares a qualifier annotation.
+	 * @see #isQualifier(Class)
+	 * @see Qualifier
+	 */
+	@Override
+	public boolean hasQualifier(DependencyDescriptor descriptor) {
+		for (Annotation ann : descriptor.getAnnotations()) {
+			if (isQualifier(ann.annotationType())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Determine whether the given dependency declares a value annotation.
 	 * @see Value
 	 */
 	@Override
+	@Nullable
 	public Object getSuggestedValue(DependencyDescriptor descriptor) {
 		Object value = findValue(descriptor.getAnnotations());
 		if (value == null) {
@@ -344,10 +361,12 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 	 */
 	@Nullable
 	protected Object findValue(Annotation[] annotationsToSearch) {
-		AnnotationAttributes attr = AnnotatedElementUtils.getMergedAnnotationAttributes(
-				AnnotatedElementUtils.forAnnotations(annotationsToSearch), this.valueAnnotationType);
-		if (attr != null) {
-			return extractValue(attr);
+		if (annotationsToSearch.length > 0) {   // qualifier annotations have to be local
+			AnnotationAttributes attr = AnnotatedElementUtils.getMergedAnnotationAttributes(
+					AnnotatedElementUtils.forAnnotations(annotationsToSearch), this.valueAnnotationType);
+			if (attr != null) {
+				return extractValue(attr);
+			}
 		}
 		return null;
 	}

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,6 +33,7 @@ import org.springframework.lang.Nullable;
  * @author Rossen Stoyanchev
  * @author Sebastien Deleuze
  * @since 3.2
+ * @param <T> the converted object type
  * @see org.springframework.core.ParameterizedTypeReference
  */
 public interface GenericHttpMessageConverter<T> extends HttpMessageConverter<T> {
@@ -79,7 +80,7 @@ public interface GenericHttpMessageConverter<T> extends HttpMessageConverter<T> 
 	 * @return {@code true} if writable; {@code false} otherwise
 	 * @since 4.2
 	 */
-	boolean canWrite(@Nullable Type type, @Nullable Class<?> clazz, @Nullable MediaType mediaType);
+	boolean canWrite(@Nullable Type type, Class<?> clazz, @Nullable MediaType mediaType);
 
 	/**
 	 * Write an given object to the given output message.

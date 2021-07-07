@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,7 +43,7 @@ public abstract class MessageSourceSupport {
 
 	private static final MessageFormat INVALID_MESSAGE_FORMAT = new MessageFormat("");
 
-	/** Logger available to subclasses */
+	/** Logger available to subclasses. */
 	protected final Log logger = LogFactory.getLog(getClass());
 
 	private boolean alwaysUseMessageFormat = false;
@@ -111,8 +111,8 @@ public abstract class MessageSourceSupport {
 	 * @param locale the Locale used for formatting
 	 * @return the formatted message (with resolved arguments)
 	 */
-	protected String formatMessage(String msg, Object[] args, Locale locale) {
-		if (msg == null || (!isAlwaysUseMessageFormat() && ObjectUtils.isEmpty(args))) {
+	protected String formatMessage(String msg, @Nullable Object[] args, Locale locale) {
+		if (!isAlwaysUseMessageFormat() && ObjectUtils.isEmpty(args)) {
 			return msg;
 		}
 		MessageFormat messageFormat = null;
@@ -156,7 +156,7 @@ public abstract class MessageSourceSupport {
 	 * @return the MessageFormat instance
 	 */
 	protected MessageFormat createMessageFormat(String msg, Locale locale) {
-		return new MessageFormat((msg != null ? msg : ""), locale);
+		return new MessageFormat(msg, locale);
 	}
 
 	/**
@@ -167,8 +167,8 @@ public abstract class MessageSourceSupport {
 	 * @param locale the Locale to resolve against
 	 * @return the resolved argument array
 	 */
-	protected Object[] resolveArguments(Object[] args, Locale locale) {
-		return args;
+	protected Object[] resolveArguments(@Nullable Object[] args, Locale locale) {
+		return (args != null ? args : new Object[0]);
 	}
 
 }

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,6 +35,7 @@ import org.springframework.util.ClassUtils;
  */
 public class ConfigurableObjectInputStream extends ObjectInputStream {
 
+	@Nullable
 	private final ClassLoader classLoader;
 
 	private final boolean acceptProxyClasses;
@@ -46,7 +47,7 @@ public class ConfigurableObjectInputStream extends ObjectInputStream {
 	 * @param classLoader the ClassLoader to use for loading local classes
 	 * @see java.io.ObjectInputStream#ObjectInputStream(java.io.InputStream)
 	 */
-	public ConfigurableObjectInputStream(InputStream in, ClassLoader classLoader) throws IOException {
+	public ConfigurableObjectInputStream(InputStream in, @Nullable ClassLoader classLoader) throws IOException {
 		this(in, classLoader, true);
 	}
 
@@ -59,7 +60,7 @@ public class ConfigurableObjectInputStream extends ObjectInputStream {
 	 * @see java.io.ObjectInputStream#ObjectInputStream(java.io.InputStream)
 	 */
 	public ConfigurableObjectInputStream(
-			InputStream in, ClassLoader classLoader, boolean acceptProxyClasses) throws IOException {
+			InputStream in, @Nullable ClassLoader classLoader, boolean acceptProxyClasses) throws IOException {
 
 		super(in);
 		this.classLoader = classLoader;

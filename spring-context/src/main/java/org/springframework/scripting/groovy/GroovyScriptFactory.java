@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,16 +61,22 @@ public class GroovyScriptFactory implements ScriptFactory, BeanFactoryAware, Bea
 
 	private final String scriptSourceLocator;
 
+	@Nullable
 	private GroovyObjectCustomizer groovyObjectCustomizer;
 
+	@Nullable
 	private CompilerConfiguration compilerConfiguration;
 
+	@Nullable
 	private GroovyClassLoader groovyClassLoader;
 
+	@Nullable
 	private Class<?> scriptClass;
 
+	@Nullable
 	private Class<?> scriptResultClass;
 
+	@Nullable
 	private CachedResultHolder cachedResult;
 
 	private final Object scriptClassMonitor = new Object();
@@ -151,8 +157,15 @@ public class GroovyScriptFactory implements ScriptFactory, BeanFactoryAware, Bea
 	}
 
 	@Override
-	public void setBeanClassLoader(@Nullable ClassLoader classLoader) {
-		this.groovyClassLoader = buildGroovyClassLoader(classLoader);
+	public void setBeanClassLoader(ClassLoader classLoader) {
+		if (classLoader instanceof GroovyClassLoader &&
+				(this.compilerConfiguration == null ||
+						((GroovyClassLoader) classLoader).hasCompatibleConfiguration(this.compilerConfiguration))) {
+			this.groovyClassLoader = (GroovyClassLoader) classLoader;
+		}
+		else {
+			this.groovyClassLoader = buildGroovyClassLoader(classLoader);
+		}
 	}
 
 	/**
@@ -172,7 +185,7 @@ public class GroovyScriptFactory implements ScriptFactory, BeanFactoryAware, Bea
 	 * @param classLoader the ClassLoader to build a GroovyClassLoader for
 	 * @since 4.3.3
 	 */
-	protected GroovyClassLoader buildGroovyClassLoader(ClassLoader classLoader) {
+	protected GroovyClassLoader buildGroovyClassLoader(@Nullable ClassLoader classLoader) {
 		return (this.compilerConfiguration != null ?
 				new GroovyClassLoader(classLoader, this.compilerConfiguration) : new GroovyClassLoader(classLoader));
 	}
@@ -189,6 +202,7 @@ public class GroovyScriptFactory implements ScriptFactory, BeanFactoryAware, Bea
 	 * @return {@code null} always
 	 */
 	@Override
+	@Nullable
 	public Class<?>[] getScriptInterfaces() {
 		return null;
 	}
@@ -208,6 +222,7 @@ public class GroovyScriptFactory implements ScriptFactory, BeanFactoryAware, Bea
 	 * @see groovy.lang.GroovyClassLoader
 	 */
 	@Override
+	@Nullable
 	public Object getScriptedObject(ScriptSource scriptSource, @Nullable Class<?>... actualInterfaces)
 			throws IOException, ScriptCompilationException {
 
@@ -251,6 +266,7 @@ public class GroovyScriptFactory implements ScriptFactory, BeanFactoryAware, Bea
 	}
 
 	@Override
+	@Nullable
 	public Class<?> getScriptedObjectType(ScriptSource scriptSource)
 			throws IOException, ScriptCompilationException {
 
@@ -299,6 +315,7 @@ public class GroovyScriptFactory implements ScriptFactory, BeanFactoryAware, Bea
 	 * or the result of running the script instance)
 	 * @throws ScriptCompilationException in case of instantiation failure
 	 */
+	@Nullable
 	protected Object executeScript(ScriptSource scriptSource, Class<?> scriptClass) throws ScriptCompilationException {
 		try {
 			GroovyObject goo = (GroovyObject) ReflectionUtils.accessibleConstructor(scriptClass).newInstance();
@@ -347,9 +364,10 @@ public class GroovyScriptFactory implements ScriptFactory, BeanFactoryAware, Bea
 	 */
 	private static class CachedResultHolder {
 
+		@Nullable
 		public final Object object;
 
-		public CachedResultHolder(Object object) {
+		public CachedResultHolder(@Nullable Object object) {
 			this.object = object;
 		}
 	}

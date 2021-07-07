@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,7 +32,6 @@ import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.lang.Nullable;
 import org.springframework.test.context.ContextConfigurationAttributes;
 import org.springframework.test.context.ContextCustomizer;
 import org.springframework.test.context.ContextLoader;
@@ -73,7 +72,7 @@ public abstract class AbstractContextLoader implements SmartContextLoader {
 	private static final Log logger = LogFactory.getLog(AbstractContextLoader.class);
 
 
-	// --- SmartContextLoader -----------------------------------------------
+	// SmartContextLoader
 
 	/**
 	 * For backwards compatibility with the {@link ContextLoader} SPI, the
@@ -91,7 +90,7 @@ public abstract class AbstractContextLoader implements SmartContextLoader {
 	 * @see #processLocations(Class, String...)
 	 */
 	@Override
-	public void processContextConfiguration(@Nullable ContextConfigurationAttributes configAttributes) {
+	public void processContextConfiguration(ContextConfigurationAttributes configAttributes) {
 		String[] processedLocations =
 				processLocations(configAttributes.getDeclaringClass(), configAttributes.getLocations());
 		configAttributes.setLocations(processedLocations);
@@ -143,7 +142,7 @@ public abstract class AbstractContextLoader implements SmartContextLoader {
 	private void invokeApplicationContextInitializers(ConfigurableApplicationContext context,
 			MergedContextConfiguration mergedConfig) {
 
-		Set<Class<? extends ApplicationContextInitializer<? extends ConfigurableApplicationContext>>> initializerClasses =
+		Set<Class<? extends ApplicationContextInitializer<?>>> initializerClasses =
 				mergedConfig.getContextInitializerClasses();
 		if (initializerClasses.isEmpty()) {
 			// no ApplicationContextInitializers have been declared -> nothing to do
@@ -153,7 +152,7 @@ public abstract class AbstractContextLoader implements SmartContextLoader {
 		List<ApplicationContextInitializer<ConfigurableApplicationContext>> initializerInstances = new ArrayList<>();
 		Class<?> contextClass = context.getClass();
 
-		for (Class<? extends ApplicationContextInitializer<? extends ConfigurableApplicationContext>> initializerClass : initializerClasses) {
+		for (Class<? extends ApplicationContextInitializer<?>> initializerClass : initializerClasses) {
 			Class<?> initializerContextClass =
 					GenericTypeResolver.resolveTypeArgument(initializerClass, ApplicationContextInitializer.class);
 			if (initializerContextClass != null && !initializerContextClass.isInstance(context)) {
@@ -190,7 +189,7 @@ public abstract class AbstractContextLoader implements SmartContextLoader {
 	}
 
 
-	// --- ContextLoader -------------------------------------------------------
+	// ContextLoader
 
 	/**
 	 * If the supplied {@code locations} are {@code null} or <em>empty</em>
@@ -213,7 +212,7 @@ public abstract class AbstractContextLoader implements SmartContextLoader {
 	 * @see #processContextConfiguration(ContextConfigurationAttributes)
 	 */
 	@Override
-	public final String[] processLocations(Class<?> clazz, @Nullable String... locations) {
+	public final String[] processLocations(Class<?> clazz, String... locations) {
 		return (ObjectUtils.isEmpty(locations) && isGenerateDefaultLocations()) ?
 				generateDefaultLocations(clazz) : modifyLocations(clazz, locations);
 	}
@@ -246,9 +245,9 @@ public abstract class AbstractContextLoader implements SmartContextLoader {
 		for (String suffix : suffixes) {
 			Assert.hasText(suffix, "Resource suffix must not be empty");
 			String resourcePath = ClassUtils.convertClassNameToResourcePath(clazz.getName()) + suffix;
-			String prefixedResourcePath = ResourceUtils.CLASSPATH_URL_PREFIX + resourcePath;
 			ClassPathResource classPathResource = new ClassPathResource(resourcePath);
 			if (classPathResource.exists()) {
+				String prefixedResourcePath = ResourceUtils.CLASSPATH_URL_PREFIX + resourcePath;
 				if (logger.isInfoEnabled()) {
 					logger.info(String.format("Detected default resource location \"%s\" for test class [%s]",
 							prefixedResourcePath, clazz.getName()));

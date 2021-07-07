@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2014 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,8 +18,6 @@ package org.springframework.core.env;
 
 import java.util.Map;
 import java.util.Properties;
-
-import org.springframework.lang.NonNullApi;
 
 /**
  * {@link PropertySource} implementation that extracts properties from a
@@ -35,16 +33,23 @@ import org.springframework.lang.NonNullApi;
  * @author Juergen Hoeller
  * @since 3.1
  */
-@NonNullApi
 public class PropertiesPropertySource extends MapPropertySource {
 
-	@SuppressWarnings({"unchecked", "rawtypes"})
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	public PropertiesPropertySource(String name, Properties source) {
 		super(name, (Map) source);
 	}
 
 	protected PropertiesPropertySource(String name, Map<String, Object> source) {
 		super(name, source);
+	}
+
+
+	@Override
+	public String[] getPropertyNames() {
+		synchronized (this.source) {
+			return super.getPropertyNames();
+		}
 	}
 
 }

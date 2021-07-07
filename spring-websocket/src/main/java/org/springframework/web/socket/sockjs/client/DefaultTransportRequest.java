@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,19 +61,22 @@ class DefaultTransportRequest implements TransportRequest {
 
 	private SockJsMessageCodec codec;
 
+	@Nullable
 	private Principal user;
 
 	private long timeoutValue;
 
+	@Nullable
 	private TaskScheduler timeoutScheduler;
 
 	private final List<Runnable> timeoutTasks = new ArrayList<>();
 
+	@Nullable
 	private DefaultTransportRequest fallbackRequest;
 
 
 	public DefaultTransportRequest(SockJsUrlInfo sockJsUrlInfo,
-			HttpHeaders handshakeHeaders, HttpHeaders httpRequestHeaders,
+			@Nullable HttpHeaders handshakeHeaders, @Nullable HttpHeaders httpRequestHeaders,
 			Transport transport, TransportType serverTransportType, SockJsMessageCodec codec) {
 
 		Assert.notNull(sockJsUrlInfo, "SockJsUrlInfo is required");
@@ -114,6 +117,7 @@ class DefaultTransportRequest implements TransportRequest {
 	}
 
 	@Override
+	@Nullable
 	public Principal getUser() {
 		return this.user;
 	}
@@ -183,7 +187,7 @@ class DefaultTransportRequest implements TransportRequest {
 
 		private final SettableListenableFuture<WebSocketSession> future;
 
-		private final AtomicBoolean handled = new AtomicBoolean(false);
+		private final AtomicBoolean handled = new AtomicBoolean();
 
 		public ConnectCallback(WebSocketHandler handler, SettableListenableFuture<WebSocketSession> future) {
 			this.handler = handler;
@@ -191,7 +195,7 @@ class DefaultTransportRequest implements TransportRequest {
 		}
 
 		@Override
-		public void onSuccess(WebSocketSession session) {
+		public void onSuccess(@Nullable WebSocketSession session) {
 			if (this.handled.compareAndSet(false, true)) {
 				this.future.set(session);
 			}
@@ -223,7 +227,9 @@ class DefaultTransportRequest implements TransportRequest {
 				}
 				else {
 					logger.error("No more fallback transports after " + DefaultTransportRequest.this, ex);
-					this.future.setException(ex);
+					if (ex != null) {
+						this.future.setException(ex);
+					}
 				}
 				if (isTimeoutFailure) {
 					try {

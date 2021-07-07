@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -67,14 +67,13 @@ public interface Errors {
 	 * e.g. "address" (defaults to "", {@code null} is also acceptable).
 	 * Can end with a dot: both "address" and "address." are valid.
 	 */
-	void setNestedPath(@Nullable String nestedPath);
+	void setNestedPath(String nestedPath);
 
 	/**
 	 * Return the current nested path of this {@link Errors} object.
 	 * <p>Returns a nested path with a dot, i.e. "address.", for easy
 	 * building of concatenated paths. Default is an empty String.
 	 */
-	@Nullable
 	String getNestedPath();
 
 	/**
@@ -167,12 +166,13 @@ public interface Errors {
 	 * @param defaultMessage fallback default message
 	 * @see #getNestedPath()
 	 */
-	void rejectValue(@Nullable String field, String errorCode, @Nullable Object[] errorArgs, @Nullable String defaultMessage);
+	void rejectValue(@Nullable String field, String errorCode,
+			@Nullable Object[] errorArgs, @Nullable String defaultMessage);
 
 	/**
 	 * Add all errors from the given {@code Errors} instance to this
 	 * {@code Errors} instance.
-	 * <p>This is a onvenience method to avoid repeated {@code reject(..)}
+	 * <p>This is a convenience method to avoid repeated {@code reject(..)}
 	 * calls for merging an {@code Errors} instance into another
 	 * {@code Errors} instance.
 	 * <p>Note that the passed-in {@code Errors} instance is supposed
@@ -194,7 +194,7 @@ public interface Errors {
 
 	/**
 	 * Get all errors, both global and field ones.
-	 * @return List of {@link ObjectError} instances
+	 * @return a list of {@link ObjectError} instances
 	 */
 	List<ObjectError> getAllErrors();
 
@@ -214,7 +214,7 @@ public interface Errors {
 
 	/**
 	 * Get all global errors.
-	 * @return List of ObjectError instances
+	 * @return a list of {@link ObjectError} instances
 	 */
 	List<ObjectError> getGlobalErrors();
 
@@ -291,6 +291,7 @@ public interface Errors {
 	 * @param field the field name
 	 * @return the current value of the given field
 	 */
+	@Nullable
 	Object getFieldValue(String field);
 
 	/**
@@ -302,6 +303,6 @@ public interface Errors {
 	 * @return the type of the field, or {@code null} if not determinable
 	 */
 	@Nullable
-	Class<?> getFieldType(@Nullable String field);
+	Class<?> getFieldType(String field);
 
 }

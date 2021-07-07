@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.springframework.remoting.rmi;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.rmi.RemoteException;
+
 import javax.naming.Context;
 import javax.naming.NamingException;
 
@@ -35,6 +36,7 @@ import org.springframework.remoting.RemoteLookupFailureException;
 import org.springframework.remoting.support.DefaultRemoteInvocationFactory;
 import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.support.RemoteInvocationFactory;
+import org.springframework.util.Assert;
 
 /**
  * {@link org.aopalliance.intercept.MethodInterceptor} for accessing RMI services
@@ -70,7 +72,9 @@ import org.springframework.remoting.support.RemoteInvocationFactory;
  * @see org.springframework.remoting.RemoteAccessException
  * @see java.rmi.RemoteException
  * @see java.rmi.Remote
+ * @deprecated as of 5.3 (phasing out serialization-based remoting)
  */
+@Deprecated
 public class JndiRmiClientInterceptor extends JndiObjectLocator implements MethodInterceptor, InitializingBean {
 
 	private Class<?> serviceInterface;
@@ -97,9 +101,8 @@ public class JndiRmiClientInterceptor extends JndiObjectLocator implements Metho
 	 * but can also be optional if the lookup returns a typed stub.
 	 */
 	public void setServiceInterface(Class<?> serviceInterface) {
-		if (serviceInterface != null && !serviceInterface.isInterface()) {
-			throw new IllegalArgumentException("'serviceInterface' must be an interface");
-		}
+		Assert.notNull(serviceInterface, "'serviceInterface' must not be null");
+		Assert.isTrue(serviceInterface.isInterface(), "'serviceInterface' must be an interface");
 		this.serviceInterface = serviceInterface;
 	}
 
@@ -267,6 +270,7 @@ public class JndiRmiClientInterceptor extends JndiObjectLocator implements Metho
 	 * @see java.rmi.NoSuchObjectException
 	 */
 	@Override
+	@Nullable
 	public Object invoke(MethodInvocation invocation) throws Throwable {
 		Object stub;
 		try {
@@ -321,8 +325,8 @@ public class JndiRmiClientInterceptor extends JndiObjectLocator implements Metho
 			if (logger.isDebugEnabled()) {
 				logger.debug("Could not connect to RMI service [" + getJndiName() + "] - retrying", ex);
 			}
-			else if (logger.isWarnEnabled()) {
-				logger.warn("Could not connect to RMI service [" + getJndiName() + "] - retrying");
+			else if (logger.isInfoEnabled()) {
+				logger.info("Could not connect to RMI service [" + getJndiName() + "] - retrying");
 			}
 			return refreshAndRetry(invocation);
 		}
